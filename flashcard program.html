@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Times Table Flashcards (1-10)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: #f0f0f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        /* NEW: Container for Modes and Score */
+        #controlsAndScore {
+            display: flex;
+            flex-wrap: wrap; 
+            width: 100%;
+            margin-bottom: 20px;
+            gap: 20px; 
+        }
+        
+        /* NEW: Score Display Area (placed to the right of the modes) */
+        #scoreDisplayArea {
+            flex: 1 1 200px; 
+            padding: 20px;
+            background-color: #eaf2f8; 
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px solid #cceeff;
+            order: 2; 
+        }
+        
+        #scoreDisplayArea h3 {
+            margin: 0 0 10px 0;
+            color: #34495e;
+            font-size: 1.2em;
+        }
+        
+        #scoreCounters {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+        }
+        
+        .score-counter-item {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        #correctCount {
+            color: #2ecc71; 
+        }
+        
+        #incorrectCount {
+            color: #c0392b; 
+        }
+
+        /* Mode Selection Styles - Now restricted to its own column */
+        #modeControls {
+            flex: 2 1 550px; 
+            order: 1; 
+        }
+
+        .mode-selection, .direct-table-selection, .test-mode-selection {
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            border-bottom: 2px solid #ccc;
+        }
+        .mode-selection h3, .direct-table-selection h3, .test-mode-selection h3 {
+            margin: 0 0 10px 0;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .mode-button-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; 
+        }
+        /* Direct Table Selection Styles */
+        .direct-table-selection {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            border-top: 2px solid #ccc;
+        }
+        .direct-table-selection button {
+            background-color: #9b59b6; 
+            margin: 3px;
+        }
+        /* Test Mode Selection Styles */
+        .test-mode-selection {
+            padding: 10px 0 20px 0;
+            width: 100%;
+            text-align: center;
+        }
+        .test-mode-selection button {
+            background-color: #c0392b; 
+            margin: 3px;
+        }
+
+        /* App Active Area Styles (Card Below) */
+        .app-active-area {
+            width: 100%;
+            max-width: 500px; 
+            align-items: center;
+            flex-direction: column;
+            display: flex;
+        }
+        .card-counter {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .flashcard {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            perspective: 1000px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.1s, border-color 0.1s, box-shadow 0.1s; 
+        }
+        /* Feedback Styles */
+        .flashcard.incorrect {
+            background-color: #ffcccc; 
+            border: 5px solid red;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+        }
+        .flashcard.correct {
+            background-color: #ccffcc; 
+            border: 5px solid green;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+        }
+        .flashcard.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            border-radius: 15px;
+        }
+        .card-front {
+            background-color: #4CAF50;
+            color: white;
+            z-index: 2;
+        }
+        .card-back {
+            background-color: #2196F3;
+            color: white;
+            transform: rotateY(180deg);
+        }
+        /* Button & Input Styles */
+        button {
+            padding: 12px 20px;
+            font-size: 1.0em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        button.next {
+            font-size: 1.2em;
+            padding: 12px 25px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #answerInput {
+            padding: 10px; 
+            font-size: 1.2em; 
+            width: 150px; 
+            margin-right: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            text-align: center;
+        }
+        #submitAnswer {
+            background-color: #2ecc71; 
+        }
+        #submitAnswer:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Times Table Mastery</h1>
+        
+        <div id="controlsAndScore">
+            
+            <div id="modeControls">
+                <div class="mode-selection" id="modeSelection">
+                    <h3>Full Deck Options:</h3>
+                    <div class="mode-button-group">
+                        <button onclick="startFullDeck(false)">Full Deck (Ordered)</button>
+                        <button onclick="startFullDeck(true)">Full Deck (Random)</button>
+                    </div>
+                </div>
+
+                <div class="direct-table-selection" id="directTableSelection">
+                    <h3>Flip Card Tables:</h3>
+                    <div class="mode-button-group">
+                        <button onclick="startSpecificTable(1)">1x Table</button>
+                        <button onclick="startSpecificTable(2)">2x Table</button>
+                        <button onclick="startSpecificTable(3)">3x Table</button>
+                        <button onclick="startSpecificTable(4)">4x Table</button>
+                        <button onclick="startSpecificTable(5)">5x Table</button>
+                        <button onclick="startSpecificTable(6)">6x Table</button>
+                        <button onclick="startSpecificTable(7)">7x Table</button>
+                        <button onclick="startSpecificTable(8)">8x Table</button>
+                        <button onclick="startSpecificTable(9)">9x Table</button>
+                        <button onclick="startSpecificTable(10)">10x Table</button>
+                    </div>
+                </div>
+
+                <div class="test-mode-selection" id="testModeSelection">
+                    <h3>Test Mode Tables:</h3>
+                    <div class="mode-button-group">
+                        <button onclick="startTestTable(1)">1x Test</button>
+                        <button onclick="startTestTable(2)">2x Test</button>
+                        <button onclick="startTestTable(3)">3x Test</button>
+                        <button onclick="startTestTable(4)">4x Test</button>
+                        <button onclick="startTestTable(5)">5x Test</button>
+                        <button onclick="startTestTable(6)">6x Test</button>
+                        <button onclick="startTestTable(7)">7x Test</button>
+                        <button onclick="startTestTable(8)">8x Test</button>
+                        <button onclick="startTestTable(9)">9x Test</button>
+                        <button onclick="startTestTable(10)">10x Test</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="scoreDisplayArea" style="display:none;">
+                <h3>Current Test Score</h3>
+                <div id="scoreCounters">
+                    <div class="score-counter-item">
+                        Correct: <span id="correctCount">0</span>
+                    </div>
+                    <div class="score-counter-item">
+                        Incorrect: <span id="incorrectCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="app-active-area" id="appArea">
+            <div class="card-counter" id="cardCounter"></div>
+
+            <div class="flashcard" id="flashcard">
+                <div class="card-inner">
+                    <div class="card-face card-front" id="cardFront">Select a mode above to begin.</div>
+                    <div class="card-face card-back" id="cardBack"></div> 
+                </div>
+            </div>
+    
+            <button class="next" id="nextButton" onclick="nextCard()">Next Card</button>
+
+            <div id="testControls" style="display:none; text-align:center;">
+                <input type="number" id="answerInput" placeholder="Your Answer">
+                <button id="submitAnswer" onclick="checkAnswer()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State Variables
+        let currentDeck = [];
+        let currentCardIndex = 0;
+        let currentTitle = "Full Deck";
+        let isTestMode = false; 
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+
+        // Global DOM Element Variables (will be assigned inside DOMContentLoaded)
+        let appArea, flashcardElement, nextButton, cardFront, cardBack, cardCounter, testControls, answerInput, scoreDisplayArea, correctCountSpan, incorrectCountSpan;
+
+        // --- Data Generation & Filtering ---
+
+        const ALL_FLASHCARDS = (() => {
+            const cards = [];
+            for (let i = 1; i <= 10; i++) {
+                for (let j = 1; j <= 10; j++) {
+                    cards.push({ front: `${i} x ${j}`, back: `${i * j}` });
+                }
+            }
+            return cards;
+        })();
+        
+        function filterTable(tableNumber) {
+            return ALL_FLASHCARDS.filter(card => {
+                const frontParts = card.front.split(' x ');
+                // CRITICAL SAFETY CHECK: Ensure we have at least two parts and the first part is a valid number.
+                if (frontParts.length < 2) {
+                    return false;
+                }
+                const firstFactor = parseInt(frontParts[0]);
+                // Check if the parsed factor is a valid number and matches the table number.
+                return !isNaN(firstFactor) && firstFactor === tableNumber;
+            });
+        }
+        
+        // --- Core App Logic Functions ---
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function updateScoreDisplay() {
+            if (correctCountSpan && incorrectCountSpan) {
+                correctCountSpan.textContent = correctAnswers;
+                incorrectCountSpan.textContent = incorrectAnswers;
+            }
+        }
+
+        function displayUIForMode() {
+            if (!appArea || !scoreDisplayArea) return; 
+
+            if (isTestMode) {
+                // Test Mode UI
+                nextButton.style.display = 'none';
+                testControls.style.display = 'block';
+                flashcardElement.style.cursor = 'default';
+                flashcardElement.classList.remove('flipped'); 
+                cardBack.style.display = 'none';
+                scoreDisplayArea.style.display = 'flex'; 
+            } else {
+                // Flip Card Mode UI
+                nextButton.style.display = 'block';
+                testControls.style.display = 'none';
+                flashcardElement.style.cursor = 'pointer';
+                cardBack.style.display = 'flex';
+                scoreDisplayArea.style.display = 'none'; 
+            }
+        }
+
+        function initApp(deck, isShuffled, title, testMode = false) {
+            isTestMode = testMode; 
+            
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+            updateScoreDisplay();
+            
+            // 1. Show the App Area and set UI based on mode
+            appArea.style.display = 'flex';
+            displayUIForMode();
+            
+            // 2. Set Deck and Title
+            currentDeck = [...deck];
+            currentTitle = title;
+            
+            // 3. Shuffle if requested
+            if (isShuffled) {
+                shuffle(currentDeck);
+            }
+            
+            // 4. Reset to the first card
+            nextButton.disabled = false;
+            currentCardIndex = 0;
+            displayCard(currentCardIndex);
+        }
+
+        function displayCard(index) {
+            const totalCards = currentDeck.length;
+            
+            flashcardElement.classList.remove('correct', 'incorrect');
+
+            if (index < totalCards) {
+                const card = currentDeck[index];
+                
+                cardFront.textContent = card.front;
+                cardBack.textContent = card.back;
+                
+                if (isTestMode) {
+                    answerInput.value = '';
+                    answerInput.focus();
+                }
+
+                flashcardElement.classList.remove('flipped');
+                cardCounter.textContent = `${currentTitle} | Card ${index + 1} / ${totalCards}`;
+            } else {
+                // Deck finished
+                cardFront.textContent = "FINISHED!";
+                cardBack.textContent = `You scored ${correctAnswers} correct out of ${totalCards} attempts. Select a new mode above to restart.`;
+                flashcardElement.classList.remove('flipped');
+                nextButton.disabled = true;
+                cardCounter.textContent = `${currentTitle} completed: ${totalCards} cards!`;
+                // Hide test controls and score when finished
+                testControls.style.display = 'none';
+                scoreDisplayArea.style.display = 'none'; 
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < currentDeck.length) {
+                currentCardIndex++;
+                displayCard(currentCardIndex);
+            }
+        }
+
+        // --- TEST MODE LOGIC ---
+
+        function checkAnswer() {
+            const currentCard = currentDeck[currentCardIndex];
+            const userAnswer = parseInt(answerInput.value); 
+            const correctAnswer = parseInt(currentCard.back);
+
+            if (isFinite(userAnswer) && userAnswer === correctAnswer) {
+                // Correct Answer
+                correctAnswers++; 
+                updateScoreDisplay();
+                
+                flashcardElement.classList.add('correct');
+                setTimeout(() => {
+                    nextCard(); 
+                }, 1000); 
+            } else {
+                // Incorrect Answer
+                incorrectAnswers++; 
+                updateScoreDisplay();
+
+                flashcardElement.classList.add('incorrect');
+                setTimeout(() => {
+                    flashcardElement.classList.remove('incorrect');
+                }, 1000); 
+                answerInput.focus();
+            }
+        }
+
+        // --- Mode Control Functions ---
+
+        function startFullDeck(isShuffled) {
+            const title = isShuffled ? "Full Deck (Random)" : "Full Deck (Ordered)";
+            initApp(ALL_FLASHCARDS, isShuffled, title, false); 
+        }
+
+        function startSpecificTable(tableNumber) {
+            const filteredDeck = filterTable(tableNumber);
+            const title = `${tableNumber}x Table`;
+            initApp(filteredDeck, false, title, false); 
+        }
+
+        function startTestTable(tableNumber) {
+            const filteredDeck = filterTable(tableNumber);
+            const title = `${tableNumber}x Test`;
+            initApp(filteredDeck, true, title, true); 
+        }
+        
+        // --- Setup & Event Listeners (Guaranteed to run after HTML is loaded) ---
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Assign DOM element variables safely inside DOMContentLoaded
+            appArea = document.getElementById('appArea');
+            flashcardElement = document.getElementById('flashcard');
+            nextButton = document.getElementById('nextButton');
+            cardFront = document.getElementById('cardFront');
+            cardBack = document.getElementById('cardBack');
+            cardCounter = document.getElementById('cardCounter');
+            testControls = document.getElementById('testControls'); 
+            answerInput = document.getElementById('answerInput');    
+            
+            // Assign score elements
+            scoreDisplayArea = document.getElementById('scoreDisplayArea');
+            correctCountSpan = document.getElementById('correctCount');
+            incorrectCountSpan = document.getElementById('incorrectCount');
+
+
+            // Add flip functionality listener 
+            if (flashcardElement) {
+                flashcardElement.addEventListener('click', () => {
+                    if (!isTestMode && currentDeck.length > 0) { 
+                        flashcardElement.classList.toggle('flipped');
+                    }
+                });
+            }
+            
+            // Initial state: hide app area and score counter
+            if (appArea) {
+                appArea.style.display = 'none';
+            }
+            if (scoreDisplayArea) {
+                scoreDisplayArea.style.display = 'none';
+            }
+
+            // Listen for Enter keypress on the input field in Test Mode
+            if (answerInput) {
+                answerInput.addEventListener('keypress', (e) => {
+                    if (isTestMode && e.key === 'Enter') {
+                        checkAnswer();
+                    }
+                });
+            }
+        });
+
+    </script>
+</body>
+</html>
